@@ -7,7 +7,7 @@ import LoginComponents from './components/Login';
 import styles from './style.less';
 import logo from '@/assets/logo.svg';
 
-const { Tab, UserName, Password, Mobile, Captcha, Submit } = LoginComponents;
+const { Tab, UserName, Password, Mobile, ImageCaptcha, Submit } = LoginComponents;
 
 @connect(({ login, loading }) => ({
   userLogin: login,
@@ -22,21 +22,20 @@ class Login extends Component {
       type: 'account',
       autoLogin: true,
       codeInfo: null,
+      captchCode: null,
     };
     this.Timer = null;
   }
 
+  componentWillMount() {
+    this.queryGetCaptcha()
+  }
+
   componentWillUnmount() {
-    if (this.Timer){
+    if (this.Timer) {
       clearInterval(this.Timer);
     }
   }
-
-  changeAutoLogin = e => {
-    this.setState({
-      autoLogin: e.target.checked,
-    });
-  };
 
   handleSubmit = (err, values) => {
     const { type } = this.state;
@@ -46,7 +45,13 @@ class Login extends Component {
       dispatch({
         type: 'login/login',
         payload: { ...values, type },
-      });
+      })
+        .then(() => {
+          const { status } = this.props.userLogin;
+          if (status === 'err') {
+            this.queryGetCaptcha()
+          }
+        })
     }
   };
 
@@ -56,6 +61,8 @@ class Login extends Component {
     }, () => {
       if (type === 'qrcode') {
         this.queryGetLoginQr();
+      } else {
+        clearInterval(this.Timer);
       }
     });
   };
@@ -86,30 +93,16 @@ class Login extends Component {
     })
   }
 
-  onGetCaptcha = () =>
-    new Promise((resolve, reject) => {
-      if (!this.loginForm) {
-        return;
-      }
-
-      this.loginForm.validateFields(['mobile'], {}, async (err, values) => {
-        if (err) {
-          reject(err);
-        } else {
-          const { dispatch } = this.props;
-
-          try {
-            const success = await dispatch({
-              type: 'login/getCaptcha',
-              payload: values.mobile,
-            });
-            resolve(!!success);
-          } catch (error) {
-            reject(error);
-          }
-        }
-      });
-    });
+  queryGetCaptcha = () => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'login/queryGetCaptcha',
+    })
+      .then(() => {
+        const { userLogin: { captchCode } } = this.props;
+        this.setState({ captchCode })
+      })
+  }
 
   renderMessage = content => (
     <Alert
@@ -125,7 +118,7 @@ class Login extends Component {
   render() {
     const { userLogin, submitting } = this.props;
     const { status, type: loginType } = userLogin;
-    const { type, autoLogin, codeInfo } = this.state;
+    const { type, captchCode, codeInfo } = this.state;
     return (
       <div className={styles.main}>
         <LoginComponents
@@ -185,6 +178,12 @@ class Login extends Component {
                 }
               }}
             />
+            <ImageCaptcha
+              name="captcha"
+              placeholder="验证码"
+              onGetImageCaptcha={this.queryGetCaptcha}
+              captchaData={captchCode}
+            />
           </Tab>
           <Tab
             key="qrcode"
@@ -199,7 +198,7 @@ class Login extends Component {
                 }),
               )}
             <div className={styles.qrcodeContainer}>
-              <img alt="logo" className={styles.qrcode} src={codeInfo?codeInfo.loginCode:''} />
+              <img alt="logo" className={styles.qrcode} src={codeInfo ? codeInfo.loginCode : ''} />
               <div className={styles.scanDesc}>
                 <span>
                   请使用微信小程序客户端扫描二维码

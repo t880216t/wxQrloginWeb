@@ -61,4 +61,17 @@ export default {
       },
     ],
   },
+  ImageCaptcha: {
+    props: {
+      size: 'large',
+      prefix: <Icon type="barcode" className={styles.prefixIcon} />,
+      placeholder: 'captcha',
+    },
+    rules: [
+      {
+        required: true,
+        message: 'Please enter Captcha!',
+      },
+    ],
+  },
 };

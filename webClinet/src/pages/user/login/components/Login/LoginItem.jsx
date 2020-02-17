@@ -1,4 +1,4 @@
-import { Button, Col, Form, Input, Row } from 'antd';
+import { Button, Col, Form, Input, Row, Popover } from 'antd';
 import React, { Component } from 'react';
 import omit from 'omit.js';
 import ItemMap from './map';
@@ -90,10 +90,12 @@ class WrapFormItem extends Component {
       name,
       getCaptchaButtonText,
       getCaptchaSecondText,
+      onGetImageCaptcha,
       updateActive,
       type,
       form,
       tabUtil,
+      captchaData,
       ...restProps
     } = this.props;
 
@@ -109,6 +111,15 @@ class WrapFormItem extends Component {
 
     const options = this.getFormItemOptions(this.props);
     const otherProps = restProps || {};
+    const content = (
+      <div style={{ height: 250, width: 500 }}>
+        <img
+          style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center' }}
+          src={captchaData}
+          alt=""
+        />
+      </div>
+    );
 
     if (type === 'Captcha') {
       const inputProps = omit(otherProps, ['onGetCaptcha', 'countDown']);
@@ -127,6 +138,34 @@ class WrapFormItem extends Component {
               >
                 {count ? `${count} ${getCaptchaSecondText}` : getCaptchaButtonText}
               </Button>
+            </Col>
+          </Row>
+        </FormItem>
+      );
+    }
+    if (type === 'ImageCaptcha') {
+      const inputProps = omit(otherProps, ['onGetCaptcha']);
+      return (
+        <FormItem>
+          <Row gutter={8}>
+            <Col span={16}>
+              {getFieldDecorator(name, options)(<Input {...customProps} {...inputProps} />)}
+            </Col>
+            <Col span={8}>
+              <Popover content={content} title="老年人辅助系统">
+                <Button className={styles.getCaptcha} size="large" onClick={onGetImageCaptcha}>
+                  <img
+                    style={{
+                      height: '100%',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    src={captchaData}
+                    alt=""
+                  />
+                </Button>
+              </Popover>
             </Col>
           </Row>
         </FormItem>

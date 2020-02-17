@@ -17,10 +17,12 @@ app.config['KEY'] = 'bHBxsLYz' # id加密秘钥
 '''
 from flask_sqlalchemy import SQLAlchemy
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:root@127.0.0.1:3306/c2h?charset=utf8mb4"
+app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///../db/data.db'
+# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:root@127.0.0.1:3306/c2h?charset=utf8mb4"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_POOL_TIMEOUT"] = 15
-app.config["SQLALCHEMY_POOL_RECYCLE"] = 3000
+# app.config["SQLALCHEMY_POOL_TIMEOUT"] = 15
+# app.config["SQLALCHEMY_POOL_RECYCLE"] = 3000
+
 db = SQLAlchemy(app)
 
 '''

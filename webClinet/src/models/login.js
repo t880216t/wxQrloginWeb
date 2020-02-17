@@ -1,30 +1,28 @@
 import { routerRedux } from 'dva/router';
 import { stringify } from 'querystring';
+import { message } from 'antd'
 import {
   fakeAccountLogin,
-  getFakeCaptcha,
+  queryGetCaptcha,
+  queryAccountLogin,
   queryGetLoginQr,
   queryGetCodeStatus,
 } from '@/services/login';
 import { setAuthority } from '@/utils/authority';
 import { getPageQuery } from '@/utils/utils';
-import route from "../../mock/route";
 
 const Model = {
   namespace: 'login',
   state: {
     status: undefined,
     codeInfo: null,
+    captchCode: null,
   },
   effects: {
     *login({ payload }, { call, put }) {
-      const response = yield call(fakeAccountLogin, payload);
-      yield put({
-        type: 'changeLoginStatus',
-        payload: response,
-      }); // Login successfully
-
-      if (response.status === 'ok') {
+      const response = yield call(queryAccountLogin, payload);
+      if (response && response.code === 0) {
+        yield put({ type: 'changeLoginStatus', payload: { status: 'ok', currentAuthority: response.currentAuthority } });
         const urlParams = new URL(window.location.href);
         const params = getPageQuery();
         let { redirect } = params;
@@ -46,10 +44,17 @@ const Model = {
 
         yield put(routerRedux.replace(redirect || '/'));
       }
+      if (response && response.code !== 0) {
+        yield put({ type: 'changeLoginStatus', payload: { status: 'err', currentAuthority: 'guest' } });
+        message.error(response.msg)
+      }
     },
 
-    *getCaptcha({ payload }, { call }) {
-      yield call(getFakeCaptcha, payload);
+    *queryGetCaptcha({ payload }, { call, put }) {
+      const response = yield call(queryGetCaptcha, payload);
+      if (response) {
+        yield put({ type: 'updateState', payload: { captchCode: response.content.captchCode } });
+      }
     },
 
     *logout(_, { put }) {
@@ -76,10 +81,9 @@ const Model = {
     },
 
     *queryGetCodeStatus({ payload }, { call, put }) {
-      yield put({ type: 'changeLoginStatus', payload: { status: 'err', currentAuthority: 'guest' } });
       const res = yield call(queryGetCodeStatus, payload);
       if (res && res.code === 0) {
-        yield put({ type: 'changeLoginStatus', payload: { status: 'ok', currentAuthority: 'admin' } });
+        // yield put({ type: 'changeLoginStatus', payload: { status: 'ok', currentAuthority: 'admin' } });
         const urlParams = new URL(window.location.href);
         const params = getPageQuery();
         let { redirect } = params;
@@ -97,6 +101,10 @@ const Model = {
         }
         yield put(routerRedux.replace(redirect || '/'));
       }
+      if (res && res.code === 10003) {
+        // yield put({ type: 'changeLoginStatus', payload: { status: 'err', currentAuthority: 'guest' } });
+        message.error(res.msg)
+      }
     },
   },
   reducers: {
@@ -105,7 +113,6 @@ const Model = {
       return {
         ...state,
         status: payload.status,
-        // type: payload.type,
       };
     },
     updateState(state, { payload }) {

@@ -47,7 +47,7 @@ const UserLayout = props => {
                 <span className={styles.title}>OSS</span>
               </Link>
             </div>
-            <div className={styles.desc}>电商后台管理系统</div>
+            <div className={styles.desc}>后台管理系统</div>
           </div>
           {children}
         </div>
